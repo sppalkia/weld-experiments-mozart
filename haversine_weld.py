@@ -1,13 +1,12 @@
 # import pandas as pd
-import numpy as np
-from math import *
+
+import argparse
+import sys
 import time
+
+import numpy as np
 from weldnumpy import weldarray
 import weldnumpy as wn
-import argparse
-import csv
-import ast
-import json
 import pandas as pd
 import os
 
@@ -16,8 +15,12 @@ import grizzly.grizzly as gr
 from grizzly.lazy_op import LazyOpResult
 
 def gen_data(size):
+    sys.stdout.write("generating data...")
+    sys.stdout.flush()
     lats = np.ones(size, dtype="float64") * 0.0698132
     lons = np.ones(size, dtype="float64") * 0.0698132
+    sys.stdout.write("done.")
+    sys.stdout.flush()
     return lats, lons
 
 # Haversine definition
@@ -25,8 +28,6 @@ def haversine(lat2, lon2):
     miles_constant = 3959.0
     lat1 = 0.70984286
     lon1 = 1.2389197
-
-    start2 = time.time()
 
     dlat = lat2 - lat1
     dlon = lon2 - lon1
@@ -53,10 +54,12 @@ def run_haversine_with_scalar(args):
     print('num rows in lattitudes: ', len(lat2))
     lat2 = weldarray(lat2)
     lon2 = weldarray(lon2)
+
     start = time.time()
     dist2 = haversine(lat2, lon2) 
-    dist2 = dist2.evaluate(workers=args.threads)
+    dist2 = dist2.evaluate()
     end = time.time()
+
     print('****************************')
     print('weld took {} seconds'.format(end-start))
     print('****************************')
@@ -70,6 +73,8 @@ parser.add_argument('-s', "--scale", type=int, default=15,
 parser.add_argument('-t', "--threads", type=int, default=15,
                     help=("Threads"))
 
+
 args = parser.parse_args()
+os.environ["WELD_THREADS"] = str(args.threads)
 args.scale = (1 << args.scale)
 run_haversine_with_scalar(args)
