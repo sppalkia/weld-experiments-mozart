@@ -11,23 +11,15 @@ from grizzly.lazy_op import LazyOpResult
 # invsqrt2 = 1.0 #0.707
 invsqrt2 = 0.707
 
-def get_data(num_els):
-    np.random.seed(2592)
-    # random prices between 1 and 101
-    price = np.float64(np.ones(num_els) * np.float64(100.0))
-    # random prices between 0 and 101
-    strike = np.float64(np.ones(num_els) * np.float64(100.0))
-    # random maturity between 0 and 4
-    t = np.float64(np.float64(1.0) + np.ones(num_els) * np.float64(6.0))
-    # random rate between 0 and 1
-    rate = np.float64(np.float64(0.01) + np.ones(num_els))
-    # random volatility between 0 and 1
-    vol = np.float64(np.float64(0.01) + np.ones(num_els))
-    print('***********Generated Data*************')
+def get_data(size):
+    price = np.ones(size, dtype="float64") * 4.0
+    strike = np.ones(size, dtype="float64") * 4.0
+    t = np.ones(size, dtype="float64") * 4.0
+    rate = np.ones(size, dtype="float64") * 4.0
+    vol = np.ones(size, dtype="float64") * 4.0
     return price, strike, t, rate, vol
 
-
-def blackscholes(price, strike, t, rate, vol, use_group, threads):
+def blackscholes(price, strike, t, rate, vol, threads):
     '''
     Implements the Black Scholes pricing model using NumPy and SciPy.
     Based on the code given by Intel, but cleaned up.
@@ -56,21 +48,10 @@ def blackscholes(price, strike, t, rate, vol, use_group, threads):
     call = (price * d1) - (e_rt * strike * d2)
     put = e_rt * strike * (c10 - d2) - price * (c10 - d1)
 
-    # the group operator! This essentially does the same thing as the
-    # intermediate evaluation option used above - it avoids recomputions.
-    if isinstance(call, weldarray) and use_group:
-        print("group")
-        lazy_ops = generate_lazy_op_list([call, put])
-        outputs = gr.group(lazy_ops).evaluate(True, passes=wn.CUR_PASSES, num_threads=threads)
-
-        call = weldarray(outputs[0])
-        put = weldarray(outputs[1])
-
-    # if we were not using the group operator.
-    if isinstance(call, weldarray) and not use_group:
-        call = call.evaluate(workers=threads)
-        put = put.evaluate(workers=threads)
-
+    lazy_ops = generate_lazy_op_list([call, put])
+    outputs = gr.group(lazy_ops).evaluate(True, passes=wn.CUR_PASSES, num_threads=threads)
+    call = weldarray(outputs[0])
+    put = weldarray(outputs[1])
     return call, put
 
 def generate_lazy_op_list(arrays):
@@ -84,7 +65,7 @@ def generate_lazy_op_list(arrays):
     return ret
 
 def run_blackscholes(args, use_weld):
-    p, s, t, r, v = get_data(args.num_els)
+    p, s, t, r, v = get_data(args.size)
     if use_weld:
         p = weldarray(p)
         s = weldarray(s)
@@ -93,68 +74,20 @@ def run_blackscholes(args, use_weld):
         v = weldarray(v)
 
     start = time.time()
-    call, put = blackscholes(p, s, t, r, v, args.use_group, args.threads)
-
-    if isinstance(call, weldarray):
-        call = call.evaluate(workers=args.threads)
-        put = put.evaluate(workers=args.threads)
-	print("**************************************************")
-	print "weld took: %.4f (result=%.4f)" % (time.time() - start, call[0])
-	print("**************************************************")
-    else:
-	print("**************************************************")
-        print "numpy took: %.4f (result=%.4f)" % (time.time() - start, call[0])
-	print("**************************************************")
-
+    call, put = blackscholes(p, s, t, r, v, args.threads)
     return call, put
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="give num_els of arrays used for blackscholes"
+        description="give size of arrays used for blackscholes"
     )
-    parser.add_argument('-n', "--num_els", type=int, required=False, default=20,
-                        help="log2 num_els of 1d arrays")
-    parser.add_argument('-ie', "--intermediate_eval", type=int, required=False,
-                        default=1, help="num_els of 1d arrays")
-    parser.add_argument('-g', "--use_group", type=int, required=False,
-                        default=1, help="num_els of 1d arrays")
-    parser.add_argument('-numpy', "--use_numpy", type=int, required=False, default=0,
-                        help="use numpy or not in this run")
-    parser.add_argument('-weld', "--use_weld", type=int, required=False, default=1,
-                        help="use weld or not in this run")
+    parser.add_argument('-s', "--size", type=int, required=False, default=20,
+                        help="log2 size of 1d arrays")
     parser.add_argument('-t', "--threads", type=int, required=False, default=1,
                         help="number of threads")
 
     args = parser.parse_args()
-    args.num_els = (1 << args.num_els)
+    args.size = (1 << args.size)
 
-    if args.use_numpy:
-        call, put = run_blackscholes(args, False)
-        print("*********Finished Numpy**********")
-    else:
-        print('Not running numpy')
-
-    if args.use_weld:
-        call2, put2 = run_blackscholes(args, True)
-    else:
-        print('Not running weld')
-
-    # Correctness check.
-    if args.use_numpy and args.use_weld:
-        print("Using np.allclose to compare results of NumPy and Weld for call: ",
-                np.allclose(call, call2.view(np.ndarray)))
-        print("Using np.allclose to compare results of NumPy and Weld for put: ",
-                np.allclose(put, put2.view(np.ndarray)))
-        print(np.linalg.norm(put - put2.view(np.ndarray)))
-        print(np.linalg.norm(call - call2.view(np.ndarray)))
-
-        # mistakes = 0
-        # for i in range(len(call)):
-            # if (call[i] - call2[i] > 5):
-                # mistakes += 1
-                # print(i)
-            # if (call[i] != call2[i]):
-                # print("call: ", call[i])
-                # print("call2: ", call2[i])
-        # print("mistakes: ", mistakes)
-
+    call, put = run_blackscholes(args, True)
+    print(call, put)
