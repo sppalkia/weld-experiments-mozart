@@ -1,11 +1,15 @@
 #!/usr/bin/env python
+
 import argparse
+import sys
 import time
-from weldnumpy import weldarray
+
 import numpy as np
-import weldnumpy as wn
 import scipy.special as ss
+import weldnumpy as wn
 import grizzly.grizzly as gr
+
+from weldnumpy import weldarray
 from grizzly.lazy_op import LazyOpResult
 
 # invsqrt2 = 1.0 #0.707
@@ -20,15 +24,6 @@ def get_data(size):
     return price, strike, t, rate, vol
 
 def blackscholes(price, strike, t, rate, vol, threads):
-    '''
-    Implements the Black Scholes pricing model using NumPy and SciPy.
-    Based on the code given by Intel, but cleaned up.
-
-    The following links were used to define the constants c05 and c10:
-
-    http://codereview.stackexchange.com/questions/108533/fastest-possible-cython-for-black-scholes-algorithm
-    http://gosmej1977.blogspot.com/2013/02/black-and-scholes-formula.html
-    '''
     c05 = np.float64(3.0)
     c10 = np.float64(1.5)
     rsig = rate + (vol*vol) * c05
@@ -65,6 +60,8 @@ def generate_lazy_op_list(arrays):
     return ret
 
 def run_blackscholes(args, use_weld):
+    sys.stdout.write("Generating data...")
+    sys.stdout.flush()
     p, s, t, r, v = get_data(args.size)
     if use_weld:
         p = weldarray(p)
@@ -72,6 +69,8 @@ def run_blackscholes(args, use_weld):
         t = weldarray(t)
         r = weldarray(r)
         v = weldarray(v)
+    sys.stdout.write("done")
+    sys.stdout.flush()
 
     start = time.time()
     call, put = blackscholes(p, s, t, r, v, args.threads)
