@@ -27,7 +27,7 @@ def crime_index_weld(data, threads):
     num_robberies = data["Number of robberies"]
     big_cities = total_population > 500000
     big_cities = total_population.mask(big_cities, 0.0)
-    double_pop = ((adult_population * 2.0) + big_cities) - (num_robberies * 2000.0)
+    double_pop = ((adult_population * 2.0) + big_cities).sub(num_robberies * 2000.0)
     crime_index = double_pop / 100000.0
     crime_index = crime_index.mask(crime_index > 0.02, 0.032)
     crime_index = crime_index.mask(crime_index < 0.01, 0.005)
