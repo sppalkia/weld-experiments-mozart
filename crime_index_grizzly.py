@@ -22,21 +22,16 @@ def gen_data(size):
                 }))
 
 def crime_index_weld(data, threads):
-    # Get all city information with total population greater than 500,000
-    data_big_cities = data[data["Total population"] > 500000]
-
-    # Compute "crime index" proportional to
-    # (Total population + 2*(Total adult population) - 2000*(Number of robberies)) / 100000
-    data_big_cities_stats = data_big_cities[
-        ["Total population", "Total adult population", "Number of robberies"]].values
-    predictions = npw.dot(data_big_cities_stats, np.array(
-        [1, 2, -2000], dtype=np.int64)) / 100000.0
-    data_big_cities["Crime index"] = predictions
-
-    # Aggregate "crime index" scores by state
-    data_big_cities["Crime index"][data_big_cities["Crime index"] >= 0.02] = 0.032
-    data_big_cities["Crime index"][data_big_cities["Crime index"] < 0.01] = 0.005
-    return data_big_cities["Crime index"].sum().evaluate(num_threads=threads)
+    total_population = data["Total population"]
+    adult_population = data["Total adult population"]
+    num_robberies = data["Number of robberies"]
+    big_cities = total_population > 500000
+    big_cities = total_population.mask(big_cities, 0.0)
+    double_pop = ((adult_population * 2.0) + big_cities) - (num_robberies * 2000.0)
+    crime_index = double_pop / 100000.0
+    crime_index = crime_index.mask(crime_index > 0.02, 0.032)
+    crime_index = crime_index.mask(crime_index < 0.01, 0.005)
+    return crime_index.sum().evaluate(num_threads=threads)
 
 def run():
     parser = argparse.ArgumentParser(
