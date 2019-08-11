@@ -10,17 +10,17 @@ warnings.filterwarnings('ignore')
 # Make display smaller
 pd.options.display.max_rows = 10
 
-def get_data():
+def get_data(path):
     unames = ['user_id', 'gender', 'age', 'occupation', 'zip']
-    users = pd.read_table('~/composer/python/benchmarks/datasets/movielens/_data/ml-1m/users.dat', sep='::', header=None,
+    users = pd.read_table(path + 'users.dat', sep='::', header=None,
                           names=unames)
 
     rnames = ['user_id', 'movie_id', 'rating', 'timestamp']
-    ratings = pd.read_table('~/composer/python/benchmarks/datasets/movielens/_data/ml-1m/ratings.dat', sep='::', header=None,
+    ratings = pd.read_table(path + 'ratings.dat', sep='::', header=None,
                             names=rnames)
 
     mnames = ['movie_id', 'title', 'genres']
-    movies = pd.read_table('~/composer/python/benchmarks/datasets/movielens/_data/ml-1m/movies.dat', sep='::', header=None,
+    movies = pd.read_table(path + 'movies.dat', sep='::', header=None,
             names=mnames, dtype={'movie_id': 'int64', 'title': 'str', 'genres': 'str'})
     return users, ratings, movies
 
@@ -61,12 +61,15 @@ def main():
         description="MovieLens with the almighty Grizzly."
     )
     parser.add_argument('-t', "--threads", type=int, default=1, help="Number of threads")
+    parser.add_argument('-f', "--filename", type=str, default="./", help="Directory with data")
     args = parser.parse_args()
 
     threads = args.threads
+    filename = args.filename
 
     print("Threads:", threads)
-    users, ratings, movies = get_data()
+    print("Filename:", filename)
+    users, ratings, movies = get_data(filename)
     rating_std_by_title = movielens(users, ratings, movies, threads)
     print rating_std_by_title
 
