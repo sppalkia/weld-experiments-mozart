@@ -1,2 +1,6 @@
 *.swp
 *.pyc
+
+# Results and environments should be ignored.
+results/
+weldbench/
