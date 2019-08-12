@@ -2,7 +2,7 @@
 
 set -x
 
-source ~/weld/weldbench/bin/activate
+source ./weldbench/bin/activate
 
 threads=( 16 )
 # threads=( 1 2 4 8 16 )
