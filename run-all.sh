@@ -42,7 +42,7 @@ for i in {1..$runs}; do
     # NOTE: These results should be run five times and summed, due to an OOM error in Weld.
     python nbody_weld.py -t $nthreads -s 15 -i 1 >> results/nbody/weld.stdout 2>> results/nbody/weld.stderr 
     # NOTE: These results should be run ten times and summed, due to an OOM error in Weld.
-    python shallow_water_weld.py -t $nthreads -s 15 -i 1 >> results/shallow_water/weld.stdout 2>> results/shallow_water/weld.stderr 
+    python shallow_water_weld.py -t $nthreads -s 14 -i 1 >> results/shallow_water/weld.stdout 2>> results/shallow_water/weld.stderr 
   done
 done
 
