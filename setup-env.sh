@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf weldbench
+
 virtualenv -p python2.7 weldbench
 source weldbench/bin/activate
 

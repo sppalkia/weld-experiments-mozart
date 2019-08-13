@@ -4,7 +4,6 @@ set -x
 
 echo "Using SA implementation at ${SA_HOME?"Need to set SA_HOME to run"}"
 
-rm -rf weldbench
 ./setup-env.sh
 
 source ./weldbench/bin/activate
