@@ -34,7 +34,7 @@ for i in {1..$runs}; do
   for nthreads in "${threads[@]}"; do
     export WELD_THREADS=$nthreads
     # Birth Analysis
-    python birth_analysis_grizzly.py -t $nthreads -f $SA_HOME/python/benchmarks/datasets/birth_analysis/_data/babynames.txt >> results/birth_analysis/weld.stdout 2>> results/birth_analysis/weld.stderr 
+    python birth_analysis_grizzly.py -t $nthreads -f $SA_HOME/python/benchmarks/datasets/birth_analysis/_data/babynames-xlarge.txt >> results/birth_analysis/weld.stdout 2>> results/birth_analysis/weld.stderr 
     python blackscholes_weld.py -t $nthreads -s 30 >> results/blackscholes/weld.stdout 2>> results/blackscholes/weld.stderr 
     python crime_index_grizzly.py -t $nthreads -s 30 >> results/crime_index/weld.stdout 2>> results/crime_index/weld.stderr 
     python data_cleaning_grizzly.py -t $nthreads -s 29 >> results/data_cleaning/weld.stdout 2>> results/data_cleaning/weld.stderr 
